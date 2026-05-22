@@ -20,9 +20,7 @@ def _normalize_products_discussed(value: list[str] | str | None) -> list[str]:
     return value
 
 
-@tool
-def list_hcps() -> str:
-    """List all available healthcare professionals with lightweight profile details."""
+def list_hcps_impl() -> str:
     with SessionLocal() as db:
         hcps = crud.list_hcps(db)
         payload = [
@@ -39,9 +37,7 @@ def list_hcps() -> str:
         return _json(payload)
 
 
-@tool
-def get_hcp_snapshot(hcp_id: int) -> str:
-    """Fetch a detailed HCP profile including prior interactions for context."""
+def get_hcp_snapshot_impl(hcp_id: int) -> str:
     with SessionLocal() as db:
         hcp = crud.get_hcp(db, hcp_id)
         if not hcp:
@@ -73,8 +69,7 @@ def get_hcp_snapshot(hcp_id: int) -> str:
         return _json(payload)
 
 
-@tool
-def log_interaction(
+def log_interaction_impl(
     hcp_id: int,
     channel: str,
     title: str,
@@ -112,8 +107,7 @@ def log_interaction(
         )
 
 
-@tool
-def edit_interaction(
+def edit_interaction_impl(
     interaction_id: int,
     summary: str | None = None,
     next_action: str | None = None,
@@ -153,9 +147,7 @@ def edit_interaction(
         )
 
 
-@tool
-def recommend_next_best_action(hcp_id: int, business_goal: str) -> str:
-    """Recommend the next best field action for an HCP based on prior context and intent."""
+def recommend_next_best_action_impl(hcp_id: int, business_goal: str) -> str:
     with SessionLocal() as db:
         hcp = crud.get_hcp(db, hcp_id)
         if not hcp:
@@ -175,9 +167,7 @@ def recommend_next_best_action(hcp_id: int, business_goal: str) -> str:
         return _json(recommendation)
 
 
-@tool
-def draft_follow_up(hcp_id: int, purpose: str) -> str:
-    """Draft a short tailored follow-up note for the HCP after an interaction."""
+def draft_follow_up_impl(hcp_id: int, purpose: str) -> str:
     with SessionLocal() as db:
         hcp = crud.get_hcp(db, hcp_id)
         if not hcp:
@@ -191,6 +181,84 @@ def draft_follow_up(hcp_id: int, purpose: str) -> str:
             "Regards,\nField Representative"
         )
         return _json({"hcp_id": hcp.id, "draft": message})
+
+
+@tool
+def list_hcps() -> str:
+    """List all available healthcare professionals with lightweight profile details."""
+    return list_hcps_impl()
+
+
+@tool
+def get_hcp_snapshot(hcp_id: int) -> str:
+    """Fetch a detailed HCP profile including prior interactions for context."""
+    return get_hcp_snapshot_impl(hcp_id)
+
+
+@tool
+def log_interaction(
+    hcp_id: int,
+    channel: str,
+    title: str,
+    objective: str,
+    summary: str,
+    sentiment: str = "neutral",
+    products_discussed: list[str] | str | None = None,
+    interaction_date: str | None = None,
+    follow_up_date: str | None = None,
+    next_action: str = "",
+) -> str:
+    """Log a new HCP interaction entry into the CRM."""
+    return log_interaction_impl(
+        hcp_id=hcp_id,
+        channel=channel,
+        title=title,
+        objective=objective,
+        summary=summary,
+        sentiment=sentiment,
+        products_discussed=products_discussed,
+        interaction_date=interaction_date,
+        follow_up_date=follow_up_date,
+        next_action=next_action,
+    )
+
+
+@tool
+def edit_interaction(
+    interaction_id: int,
+    summary: str | None = None,
+    next_action: str | None = None,
+    sentiment: str | None = None,
+    follow_up_date: str | None = None,
+    channel: str | None = None,
+    title: str | None = None,
+    objective: str | None = None,
+    products_discussed: list[str] | str | None = None,
+) -> str:
+    """Edit an existing interaction when a rep wants to correct or enrich the record."""
+    return edit_interaction_impl(
+        interaction_id=interaction_id,
+        summary=summary,
+        next_action=next_action,
+        sentiment=sentiment,
+        follow_up_date=follow_up_date,
+        channel=channel,
+        title=title,
+        objective=objective,
+        products_discussed=products_discussed,
+    )
+
+
+@tool
+def recommend_next_best_action(hcp_id: int, business_goal: str) -> str:
+    """Recommend the next best field action for an HCP based on prior context and intent."""
+    return recommend_next_best_action_impl(hcp_id, business_goal)
+
+
+@tool
+def draft_follow_up(hcp_id: int, purpose: str) -> str:
+    """Draft a short tailored follow-up note for the HCP after an interaction."""
+    return draft_follow_up_impl(hcp_id, purpose)
 
 
 TOOLS = [

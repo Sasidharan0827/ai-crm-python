@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.agent.graph import build_agent
+from app.agent.menu_parser import try_handle_menu_commands
 from app.database import Base, engine, get_db, SessionLocal
 from app.seed import seed_data
 from app.config import settings
@@ -82,6 +83,10 @@ def update_interaction(
 
 @app.post("/api/agent/run", response_model=schemas.AgentResponse)
 async def run_agent(payload: schemas.AgentRequest):
+    parsed = try_handle_menu_commands(payload.message)
+    if parsed.handled:
+        return schemas.AgentResponse(reply=parsed.reply, tool_messages=parsed.tool_messages)
+
     try:
         agent = build_agent()
     except RuntimeError as exc:
